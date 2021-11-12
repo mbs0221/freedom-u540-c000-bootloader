@@ -18,8 +18,13 @@ CFLAGS=-I. -Ilib/ -O2 -ggdb -march=rv64imafdc -mabi=lp64d -Wall -mcmodel=medany 
 CCASFLAGS=-I. -mcmodel=medany -mexplicit-relocs
 LDFLAGS=-nostdlib -nostartfiles
 
-dts := $(BUILD_DIR)/$(CONFIG_PROJECT).$(CONFIG).dts
-clk := $(BUILD_DIR)/$(CONFIG_PROJECT).$(CONFIG).tl_clock.h
+BUILD_DIR?=~/chipyard/fpga/generated-src
+CONFIG_PROJECT?=chipyard.fpga.vc709.VC709FPGATestHarness
+CONFIG?=RocketVC709Config
+LONG_NAME=$(CONFIG_PROJECT).$(CONFIG)
+
+dts := $(BUILD_DIR)/$(LONG_NAME)/$(LONG_NAME).dts
+clk := $(BUILD_DIR)/$(LONG_NAME)/$(LONG_NAME).tl_clock.h
 
 # This is broken up to match the order in the original zsbl
 # clkutils.o is there to match original zsbl, may not be needed
@@ -61,12 +66,17 @@ H=$(wildcard *.h */*.h)
 
 all: zsbl.bin fsbl.bin
 
+vc707: $(clk) FPGAzsbl.bin FPGAfsbl.bin
+
+vc709: $(clk) VC709zsbl.bin VC709fsbl.bin
+
 romgen: $(clk) FPGAzsbl.hex FPGAfsbl.bin
 	cp FPGAzsbl.hex $(BUILD_DIR)/
 	$(rocketchip_dir)/scripts/vlsi_rom_gen $(ROMCONF) $(BUILD_DIR)/FPGAzsbl.hex > $(BUILD_DIR)/rom.v
 
+# awk '/tlclk {/ && !f{f=1; next}; f && match($$0, /^.*clock-frequency.*<(.*)>.*/, arr) { print "#define TL_CLK " arr[1] "UL"}' $< > tl_clock.h
 $(clk): $(dts)
-	awk '/tlclk {/ && !f{f=1; next}; f && match($$0, /^.*clock-frequency.*<(.*)>.*/, arr) { print "#define TL_CLK " arr[1] "UL"}' $< > tl_clock.h
+	echo "#define TL_CLK 50000000" > tl_clock.h
 	cp tl_clock.h $@
 
 elf: zsbl.elf fsbl.elf
@@ -88,6 +98,9 @@ zsbl.elf: zsbl/start.o zsbl/main.o $(LIB_ZS1_O) zsbl/ux00boot.o $(LIB_ZS2_O) mem
 FPGAzsbl.elf: zsbl/start.o zsbl/main.o $(LIB_ZS1_O) zsbl/ux00boot.o $(LIB_ZS2_O) memory_fpga.lds ux00_zsbl.lds
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(filter %.o,$^) $(patsubst %, -T%, $(filter %.lds,$^))
 
+VC709zsbl.elf: zsbl/start.o zsbl/main.o $(LIB_ZS1_O) zsbl/ux00boot.o $(LIB_ZS2_O) memory_vc709.lds ux00_zsbl.lds
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(filter %.o,$^) $(patsubst %, -T%, $(filter %.lds,$^))
+
 fsbl/ux00boot.o: ux00boot/ux00boot.c
 	$(CC) $(CFLAGS) -DUX00BOOT_BOOT_STAGE=1 -c -o $@ $^
 
@@ -95,6 +108,9 @@ fsbl.elf: $(LIB_FS_O) ememoryotp/ememoryotp.o memory.lds ux00_fsbl.lds
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(filter %.o,$^) $(patsubst %, -T%, $(filter %.lds,$^))
 
 FPGAfsbl.elf: $(LIB_FS_O) memory_fpga.lds ux00_fsbl.lds
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(filter %.o,$^) $(patsubst %, -T%, $(filter %.lds,$^))
+
+VC709fsbl.elf: $(LIB_FS_O) memory_vc709.lds ux00_fsbl.lds
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(filter %.o,$^) $(patsubst %, -T%, $(filter %.lds,$^))
 
 fsbl/dtb.o: fsbl/ux00_fsbl.dtb
@@ -130,3 +146,4 @@ endif
 clean::
 	rm -f */*.o */*.dtb zsbl.bin zsbl.elf zsbl.asm fsbl.bin fsbl.elf fsbl.asm lib/version.c
 	rm -f FPGAzsbl.bin FPGAzsbl.elf FPGAzsbl.hex FPGAfsbl.bin FPGAfsbl.elf tl_clock.h $(clk)
+	rm -f VC709zsbl.bin VC709zsbl.elf VC709zsbl.hex VC709fsbl.bin VC709fsbl.elf

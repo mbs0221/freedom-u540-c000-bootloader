@@ -7,7 +7,8 @@
 #define _SIFIVE_PLATFORM_H
 
 #ifdef FPGA
-#include <sifive/platform_fpga.h>
+// #include <sifive/platform_fpga.h>
+#include <sifive/platform_vc709.h>
 #else
 #include <sifive/platform_hifive.h>
 #endif

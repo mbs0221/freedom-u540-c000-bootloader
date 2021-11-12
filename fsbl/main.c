@@ -41,7 +41,7 @@
 #ifndef FPGA
 #define NUM_CORES 5
 #else
-#define NUM_CORES 4
+#define NUM_CORES 6
 #include "tl_clock.h"
 #define F_CLK TL_CLK/1000
 #endif

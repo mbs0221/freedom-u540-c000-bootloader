@@ -31,7 +31,7 @@ void handle_trap(void)
 
 void init_uart(unsigned int peripheral_input_khz)
 {
-  unsigned long long uart_target_hz = 115200ULL;
+  unsigned long long uart_target_hz = 921600ULL;
   UART0_REG(UART_REG_DIV) = uart_min_clk_divisor(peripheral_input_khz * 1000ULL, uart_target_hz);
 }
 
