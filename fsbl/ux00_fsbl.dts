@@ -508,6 +508,7 @@
 			reg = <0x0 0x10010000 0x0 0x1000>;
 			reg-names = "control";
 			clocks = <&tlclk>;
+			status = "disabled";
 		};
 		L29: serial@10011000 {
 			compatible = "sifive,uart0";
@@ -516,6 +517,7 @@
 			reg = <0x0 0x10011000 0x0 0x1000>;
 			reg-names = "control";
 			clocks = <&tlclk>;
+			status = "disabled";
 		};
 		L49: spi@10040000 {
 			compatible = "sifive,spi0";
